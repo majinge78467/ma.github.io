@@ -3,29 +3,20 @@
 	<head>
 		<title>three.js webgl - controls - deviceorientation</title>
 		<meta charset="utf-8">
+		<meta http-equiv="Access-Control-Allow-Origin" content="*" />
 		<meta name="viewport" content="user-scalable=no, initial-scale=1">
 		<style>
 			body {
 				margin: 0px;
 				background-image:url("load_bg.jpg");
 				background-size:cover;
+				height: 100%;
 			}
 
-			#info {
-				position: absolute;
-				top: 0px; width: 100%;
-				color: #ffffff;
-				padding: 5px;
-				font-family:Monospace;
-				font-size:13px;
-				font-weight: bold;
-				text-align:center;
-				box-sizing: border-box;
+			canvas {
+				display: block;
 			}
 
-			a {
-				color: #ff8800;
-			}
 		</style>
 	</head>
 	<body>
@@ -39,8 +30,37 @@
 			<!-- load_bg.onload = function(){ -->
 				<!-- console.log('背景加载完成') -->
 			<!-- } -->
-			
+			let imgSrc = "http://supcache.hsmxl.cn/data/majinge.qy16.scutsource.cn/4.jpg";
+ 
+    //width、height调用时传入具体像素值，控制大小 ,不传则默认图像大小
+    function getBase64Image(img, width, height) {
+      var canvas = document.createElement("canvas");
+      canvas.width = width ? width : img.width;
+      canvas.height = height ? height : img.height;
+      var ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      var dataURL = canvas.toDataURL();
+      return dataURL;
+    }
+    function getCanvasBase64(img) {
+      var image = new Image();
+      //至关重要
+      image.crossOrigin = '';
+      image.src = img;
+      //至关重要
+      if (img) {
+        image.onload = function () {
+			console.log(getBase64Image(image))
+          deferred.resolve(getBase64Image(image));//将base64传给done上传处理
+          document.getElementById("container2").appendChild(image);
+        }
+      }
+    }
+    getCanvasBase64(imgSrc)
+	
+	
 			var camera, scene, renderer, controls;
+				var texture = [];
 
 			init();
 			animate();
@@ -53,7 +73,7 @@
 
 				scene = new THREE.Scene();
 				var loader = new THREE.TextureLoader();
-				var texture = [];
+				loader.crossOrigin = 'anonymous';
 				texture.push(loader.load( '1.jpg' ))
 				texture.push(loader.load( '2.jpg' ))
 				texture.push(loader.load( '3.jpg' ))
@@ -72,16 +92,16 @@
 	
 				
 				var material = new THREE.MeshBasicMaterial( {
-					map: texture[1]
+					map: texture[0]
 				} );
 				
-				var mesh = new THREE.Mesh( geometry, material );
+				mesh = new THREE.Mesh( geometry, material );
 				mesh.name = 'sky_box1';
 				mesh.material.transparent = true;
 				scene.add( mesh );
 				
 				//另一个天空盒
-				var sphere2 = new THREE.Mesh( geometry, material.clone() )
+				sphere2 = new THREE.Mesh( geometry, material.clone() )
 				sphere2.name = 'sky_box2';
 				sphere2.material.transparent = true;
 				sphere2.material.opacity = 0;
@@ -94,72 +114,7 @@
 				cube.position.set(0,-300,0)
 				scene.add( cube );
 
-
-				function click( event ) {
-					console.log('点击')
-					var raycaster = new THREE.Raycaster();
-					var mouse = new THREE.Vector2();
-
-					mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-					mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-
-					// update the picking ray with the camera and mouse position
-					raycaster.setFromCamera( mouse, camera );
-
-					// calculate objects intersecting the picking ray
-					var intersects = raycaster.intersectObjects( scene.children );
-					console.log('intersect',intersects[0].object)
-					
-					
-					if(intersects[0]){
-						if(intersects[0].object.name=='sky_box1'||intersects[0].object.name=='sky_box2'){
-							var map_index = texture.indexOf(intersects[0].object.material.map)
-							map_index++
-							if(map_index==4){
-								map_index=0
-							}
-							if(intersects[0].object.name=='sky_box1'){
-								sphere2.material.map = texture[map_index]
-								sphere2.visible = true;
-								var interval = setInterval(function(){
-									if(mesh.material.opacity<0.1){
-										mesh.material.opacity = 0
-										sphere2.material.opacity = 1
-										mesh.visible = false;
-										console.log('循环终止')
-										clearInterval(interval)
-									}else{
-										mesh.material.opacity-=1/62
-										sphere2.material.opacity+=1/62;
-									}
-								},16)
-							}else{
-								mesh.material.map = texture[map_index]
-								mesh.visible = true;
-								var interval = setInterval(function(){
-									if(sphere2.material.opacity<0.1){
-										sphere2.material.opacity = 0
-										mesh.material.opacity = 1
-										sphere2.visible = false;
-										console.log('循环终止')
-										clearInterval(interval)
-									}else{
-										sphere2.material.opacity-=1/62
-										mesh.material.opacity+=1/62;
-									}
-								},16)
-							}
-						
-						}else{
-							//跳转连接
-							window.location.href="https://www.akinglobal.com.tr/cn/allergan.html" 
-						}
-					}
-
-				}
-			
-
-				window.addEventListener( 'click', click, false );
+				<!-- window.addEventListener( 'click', click, false ); -->
 				
 				
 				renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -173,7 +128,70 @@
 
 
 			}
+			
+			window.addEventListener( 'click', click, false );
+			function click( event ) {
+				console.log('点击')
+				var raycaster = new THREE.Raycaster();
+				var mouse = new THREE.Vector2();
 
+				mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+				mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+				// update the picking ray with the camera and mouse position
+				raycaster.setFromCamera( mouse, camera );
+
+				// calculate objects intersecting the picking ray
+				var intersects = raycaster.intersectObjects( scene.children );
+				console.log('intersect',intersects[0].object)
+				
+				
+				if(intersects[0]){
+					if(intersects[0].object.name=='sky_box1'||intersects[0].object.name=='sky_box2'){
+						var map_index = texture.indexOf(intersects[0].object.material.map)
+						map_index++
+						if(map_index==4){
+							map_index=0
+						}
+						if(intersects[0].object.name=='sky_box1'){
+							sphere2.material.map = texture[map_index]
+							sphere2.visible = true;
+							var interval = setInterval(function(){
+								if(mesh.material.opacity<0.1){
+									mesh.material.opacity = 0
+									sphere2.material.opacity = 1
+									mesh.visible = false;
+									console.log('循环终止')
+									clearInterval(interval)
+								}else{
+									mesh.material.opacity-=1/62
+									sphere2.material.opacity+=1/62;
+								}
+							},16)
+						}else{
+							mesh.material.map = texture[map_index]
+							mesh.visible = true;
+							var interval = setInterval(function(){
+								if(sphere2.material.opacity<0.1){
+									sphere2.material.opacity = 0
+									mesh.material.opacity = 1
+									sphere2.visible = false;
+									console.log('循环终止')
+									clearInterval(interval)
+								}else{
+									sphere2.material.opacity-=1/62
+									mesh.material.opacity+=1/62;
+								}
+							},16)
+						}
+					
+					}else{
+						//跳转连接
+						window.location.href="https://www.akinglobal.com.tr/cn/allergan.html" 
+					}
+				}
+
+			}
 			function animate() {
 
 				window.requestAnimationFrame( animate );
