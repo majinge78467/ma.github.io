@@ -22,10 +22,11 @@
 	<body>
 
 		<script src="three.js"></script>
+		<script src="pic.js"></script>
 		<script src="DeviceOrientationControls.js"></script>
 
 		<script>
-			console.log('调试1')
+			console.log('调试2')
 			
 			var camera, scene, renderer, controls;
 			var texture = [];
@@ -42,10 +43,10 @@
 				scene = new THREE.Scene();
 				var loader = new THREE.TextureLoader();
 				loader.crossOrigin = 'anonymous';
-				texture.push(loader.load( '1.jpg' ))
-				texture.push(loader.load( '2.jpg' ))
-				texture.push(loader.load( '3.jpg' ))
-				loader.load( '4.jpg',
+				texture.push(loader.load( p1 ))
+				texture.push(loader.load( p2 ))
+				texture.push(loader.load( p3 ))
+				loader.load( p4,
 					function(te){
 						console.log('第四张图片加载完成',te)
 						texture.push(te)
