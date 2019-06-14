@@ -8,7 +8,7 @@
 			body {
 				margin: 0px;
 				background-image:url("load_bg.jpg");
-				background-size:cover;
+				background-size:100% 99.9%;
 			}
 
 			#info {
@@ -108,7 +108,7 @@
 
 					// calculate objects intersecting the picking ray
 					var intersects = raycaster.intersectObjects( scene.children );
-					console.log('intersect',intersects[0].object)
+					<!-- console.log('intersect',intersects[0].object) -->
 					
 					
 					if(intersects[0]){
@@ -159,13 +159,13 @@
 				}
 			
 
-				window.addEventListener( 'click', click, false );
-				
-				
 				renderer = new THREE.WebGLRenderer( { antialias: true } );
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				
+				renderer.domElement.addEventListener( 'touchend', click, false );
+				
+				<!-- touchend -->
 
 				//
 
