@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>three.js webgl - controls - deviceorientation</title>
 		<meta charset="utf-8">
-		<meta http-equiv="Access-Control-Allow-Origin" content="*" />
-		<meta name="viewport" content="user-scalable=no, initial-scale=1">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
 		<style>
 			body {
 				margin: 0px;
-				background-image:url("load_bg.jpg") no-repeat;; 
-				background-size:cover;
+				background-image:url("load_bg.jpg");
 				height: 100%;
+				background-size:cover;
+				background-repeat:no-repeat;
+				overflow: hidden;
 			}
 
 			canvas {
@@ -22,13 +24,106 @@
 	<body>
 
 		<script src="three.js"></script>
-		<script src="pic.js"></script>
+		<!-- <script src="pic.js"></script> -->
 		<script src="DeviceOrientationControls.js"></script>
+		<script src="OrbitControls.js"></script>
 
 		<script>
-			console.log('调试2')
+			console.log('88')
 			
-			var camera, scene, renderer, controls;
+			var raycaster = new THREE.Raycaster();
+			var mouse = new THREE.Vector2();
+			var moving = false;
+			function start_raycaster( event ) {
+				console.log('event',event);
+				if(!texture[3])
+					return
+				
+				var X = event.clientX,Y = event.clientY;
+				if(event.changedTouches){
+					console.log('移动端事件')
+					X = event.changedTouches[0].clientX
+					Y = event.changedTouches[0].clientY
+				}else{
+					console.log('click点击事件')
+				}
+				
+				mouse.x = ( X/ window.innerWidth ) * 2 - 1;
+				mouse.y = - ( Y / window.innerHeight ) * 2 + 1;
+
+				// update the picking ray with the camera and mouse position
+				raycaster.setFromCamera( mouse, camera );
+
+				// calculate objects intersecting the picking ray
+				var intersects = raycaster.intersectObjects( scene.children );
+				console.log('intersect',intersects[0].object);
+				
+				
+				if(intersects[0]){
+					if(intersects[0].object.name=='sky_box1'||intersects[0].object.name=='sky_box2'){
+						var map_index = texture.indexOf(intersects[0].object.material.map);
+						map_index++;
+						if(map_index==4){
+							map_index=0;
+						}
+						if(intersects[0].object.name=='sky_box1'){
+							sphere2.material.map = texture[map_index]
+							sphere2.visible = true;
+							var interval = setInterval(function(){
+								if(mesh.material.opacity<0.1){
+									mesh.material.opacity = 0;
+									sphere2.material.opacity = 1;
+									mesh.visible = false;
+									console.log('循环终止')
+									clearInterval(interval);
+								}else{
+									mesh.material.opacity-=1/62;
+									sphere2.material.opacity+=1/62;
+								}
+							},16)
+						}else{
+							mesh.material.map = texture[map_index]
+							mesh.visible = true;
+							var interval = setInterval(function(){
+								if(sphere2.material.opacity<0.1){
+									sphere2.material.opacity = 0;
+									mesh.material.opacity = 1;
+									sphere2.visible = false;
+									console.log('循环终止');
+									clearInterval(interval);
+								}else{
+									sphere2.material.opacity-=1/62;
+									mesh.material.opacity+=1/62;
+								}
+							},16)
+						}
+					
+					}else{
+						//跳转连接
+						window.location.href="https://www.akinglobal.com.tr/cn/allergan.html" ;
+					}
+				}
+
+			}
+			var record_positionX;
+			var record_positionZ;
+			function onMouseClick(){
+				 record_positionX = camera.position.x
+				record_positionZ = camera.position.z
+			}
+			function onMouseEnd(e){
+				if(record_positionX == camera.position.x&&record_positionZ == camera.position.z){
+					start_raycaster(e)
+				}else{
+					<!-- moving = false; -->
+				}
+			}
+			<!-- window.addEventListener( 'click', onMouseClick, false ); -->
+			window.addEventListener( 'touchstart', onMouseClick, false );
+			<!-- window.addEventListener( 'touchmove', onMouseMove,{ passive: false } ); -->
+			window.addEventListener( 'touchend', onMouseEnd, false );
+			
+			var camera, scene, renderer, controls,controls2;
 			var texture = [];
 
 			init();
@@ -37,20 +132,28 @@
 			function init() {
 
 				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1100 );
-
+				camera.position.set(1,0,0)
 				controls = new THREE.DeviceOrientationControls( camera );
+				<!-- controls2 = new THREE.OrbitControls( camera ); -->
 
 				scene = new THREE.Scene();
 				var loader = new THREE.TextureLoader();
 				loader.crossOrigin = 'anonymous';
-				texture.push(loader.load( p1 ))
-				texture.push(loader.load( p2 ))
-				texture.push(loader.load( p3 ))
-				loader.load( p4,
+				texture.push(loader.load( '1.jpg' ))
+				texture.push(loader.load( '2.jpg' ))
+				texture.push(loader.load( '3.jpg' ))
+				<!-- texture.push(loader.load( p1 )) -->
+				<!-- texture.push(loader.load( p2 )) -->
+				<!-- texture.push(loader.load( p3)) -->
+				loader.load( '4.jpg',
+				<!-- loader.load( p4, -->
 					function(te){
 						console.log('第四张图片加载完成',te)
 						texture.push(te)
 						document.body.appendChild( renderer.domElement );
+						setTimeout(function(){
+							onWindowResize()
+						},1000)
 					}
 				)
 				
@@ -98,77 +201,13 @@
 
 			}
 			
-			window.addEventListener( 'click', click, false );
-			function click( event ) {
-				console.log('点击')
-				if(!texture[3])
-					return
-				
-				var raycaster = new THREE.Raycaster();
-				var mouse = new THREE.Vector2();
-
-				mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-				mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-
-				// update the picking ray with the camera and mouse position
-				raycaster.setFromCamera( mouse, camera );
-
-				// calculate objects intersecting the picking ray
-				var intersects = raycaster.intersectObjects( scene.children );
-				console.log('intersect',intersects[0].object)
-				
-				
-				if(intersects[0]){
-					if(intersects[0].object.name=='sky_box1'||intersects[0].object.name=='sky_box2'){
-						var map_index = texture.indexOf(intersects[0].object.material.map)
-						map_index++
-						if(map_index==4){
-							map_index=0
-						}
-						if(intersects[0].object.name=='sky_box1'){
-							sphere2.material.map = texture[map_index]
-							sphere2.visible = true;
-							var interval = setInterval(function(){
-								if(mesh.material.opacity<0.1){
-									mesh.material.opacity = 0
-									sphere2.material.opacity = 1
-									mesh.visible = false;
-									console.log('循环终止')
-									clearInterval(interval)
-								}else{
-									mesh.material.opacity-=1/62
-									sphere2.material.opacity+=1/62;
-								}
-							},16)
-						}else{
-							mesh.material.map = texture[map_index]
-							mesh.visible = true;
-							var interval = setInterval(function(){
-								if(sphere2.material.opacity<0.1){
-									sphere2.material.opacity = 0
-									mesh.material.opacity = 1
-									sphere2.visible = false;
-									console.log('循环终止')
-									clearInterval(interval)
-								}else{
-									sphere2.material.opacity-=1/62
-									mesh.material.opacity+=1/62;
-								}
-							},16)
-						}
-					
-					}else{
-						//跳转连接
-						window.location.href="https://www.akinglobal.com.tr/cn/allergan.html" 
-					}
-				}
-
-			}
+			
 			function animate() {
 
 				window.requestAnimationFrame( animate );
 
 				controls.update();
+				<!-- controls2.update(); -->
 				renderer.render( scene, camera );
 
 			}
